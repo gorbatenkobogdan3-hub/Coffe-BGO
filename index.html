@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="{{ current_lang }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ lang['SITE_TITLE'] }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/intro.js/introjs.css"> 
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="green-bg">
+        <div class="container">
+            <div class="logo" data-intro="{{ current_lang == 'ua' and 'Це наш логотип. Натисніть, щоб перейти на головну сторінку.' or 'This is our logo. Click to go to the main page.' }}" data-step="1">
+                <a href="{{ url_for('home') }}">
+                    <h1>BGO</h1>
+                </a>
+            </div>
+            <nav data-intro="{{ current_lang == 'ua' and 'Навігація сайту. Тут ви знайдете всі основні розділи.' or 'Site navigation. Here you will find all the main sections.' }}" data-step="2">
+                <a href="{{ url_for('index') }}">{{ lang['NAV_STORE'] }}</a>
+                <a href="{{ url_for('new_arrivals') }}">{{ lang['NAV_NEW'] }}</a> 
+                <a href="{{ url_for('promotions') }}">{{ lang['NAV_ACTIONS'] }}</a>
+                <a href="{{ url_for('reviews_page') }}">{{ lang['NAV_REVIEWS'] }}</a> <a href="{{ url_for('orders') }}">{{ lang['NAV_ORDERS'] }}</a> 
+            </nav>
+            <div class="controls-group">
+                <div class="lang-controls">
+                    <a href="{{ url_for('set_language', lang_code='ua') }}" class="lang-btn">🇺🇦 UA</a>
+                    <a href="{{ url_for('set_language', lang_code='en') }}" class="lang-btn">🇬🇧 EN</a>
+                </div>
+                <button id="help-btn" class="help-btn-main" data-intro="{{ current_lang == 'ua' and 'Натисніть тут, щоб розпочати екскурсію по сайту!' or 'Click here to start the site tour!' }}" data-step="6">?</button>
+            </div>
+            <button id="cart-btn" class="cart-btn-main" data-intro="{{ current_lang == 'ua' and 'Тут відображається кількість товарів у вашому кошику та можна оформити замовлення.' or 'This shows the number of items in your cart and allows you to checkout.' }}" data-step="3">
+                <span id="cart-count">0</span> {{ lang['CART'] }}
+            </button>
+        </div>
+    </header>
+
+    <main class="container">
+        <section id="products">
+            <h2 data-intro="{{ current_lang == 'ua' and 'Це список доступних товарів. Використовуйте фільтри вище.' or 'This is the list of available products. Use the filters above.' }}" data-step="4">{{ lang.get(title_key, lang['PRODUCTS_TITLE']) }}</h2>
+
+            {% if not title_key %} 
+            <div id="category-filter" class="filter-bar">
+                <button class="filter-btn active" data-category="all">{{ current_lang == 'ua' and 'Всі товари' or 'All Products' }}</button>
+                <button class="filter-btn" data-category="coffee">{{ lang['NAV_COFFEE'] }}</button>
+                <button class="filter-btn" data-category="tea">{{ lang['NAV_TEA'] }}</button>
+                <button class="filter-btn" data-category="sweets">{{ lang['NAV_SWEETS'] }}</button>
+                <button class="filter-btn" data-category="drinks">{{ lang['NAV_DRINKS'] }}</button>
+                <button class="filter-btn" data-category="accessories">{{ lang['NAV_ACCESSORIES'] }}</button>
+            </div>
+            {% endif %}
+
+            <div class="product-list">
+                {% for product in products %}
+                <div class="product-card" data-category="{{ product.category }}" data-product-id="{{ product.id }}">
+                    <img src="{{ url_for('static', filename='images/' + product.img) }}" alt="{{ lang[product.name_key] }}">
+                    <h3>{{ lang[product.name_key] }}</h3>
+                    <p class="details">{{ product.details_ua if current_lang == 'ua' else product.details_en }}</p>
+                    <p class="price">{{ "%.2f" | format(product.price) }} грн</p>
+                    <p class="rating">{{ product.rating }}</p>
+                    
+                    {% if product.in_stock %}
+                        <div class="quantity-controls">
+                            <label for="qty-{{ product.id }}">{{ current_lang == 'ua' and 'К-ть' or 'Qty' }}:</label>
+                            <input type="number" id="qty-{{ product.id }}" value="1" min="1" max="99" class="product-quantity-input">
+                        </div>
+                        
+                        <button class="add-to-cart green-bg" 
+                                data-id="{{ product.id }}" 
+                                data-name="{{ lang[product.name_key] }}" 
+                                data-price="{{ "%.2f" | format(product.price) }}"
+                                data-intro="{{ current_lang == 'ua' and 'Натисніть тут, щоб додати товар у кошик.' or 'Click here to add the item to your cart.' }}" data-step="5"
+                                >{{ lang['CART_BTN'] }}</button>
+                    {% else %}
+                        <span class="out-of-stock-tag">{{ lang['OUT_OF_STOCK'] }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        </main>
+
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>{{ lang['CART'] }}</h2>
+            <ul id="cart-items">
+                </ul>
+            <div class="cart-total-info">
+                <strong>{{ lang['TOTAL'] }}</strong> <span id="cart-total">0.00</span> грн.
+            </div>
+            <button id="checkout-btn" class="checkout-btn green-bg">{{ lang['CHECKOUT'] }}</button>
+            <form id="checkout-form-container" class="checkout-form">
+                <p><strong>{{ lang['CHECKOUT'] }}</strong></p>
+                <label for="customer-name">{{ lang['FORM_NAME'] }}*</label>
+                <input type="text" id="customer-name" required>
+                <label for="customer-phone">{{ lang['FORM_PHONE'] }}*</label>
+                <input type="tel" id="customer-phone" required>
+                <label for="customer-city">{{ lang['FORM_CITY'] }}*</label>
+                <input type="text" id="customer-city" required>
+                <label for="customer-email">{{ lang['FORM_EMAIL'] }}</label>
+                <input type="email" id="customer-email">
+                <label for="payment-method">{{ lang['FORM_PAYMENT'] }}</label>
+                <select id="payment-method">
+                    <option value="cash">{{ lang['PAYMENT_CASH'] }}</option>
+                    <option value="card">{{ lang['PAYMENT_CARD'] }}</option>
+                </select>
+                <button type="submit" class="submit-order-btn green-bg">{{ lang['SUBMIT_ORDER'] }}</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/intro.js/intro.js"></script>
+    <script src="{{ url_for('static', filename='site-tour.js') }}"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
